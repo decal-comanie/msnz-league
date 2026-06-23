@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>트리플에스 미소녀즈 리그</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: Arial, "Malgun Gothic", sans-serif; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #101820;
+      color: white;
+    }
+
+    .wrap { max-width: 1300px; margin: 0 auto; }
+
+    h1 { text-align: center; margin: 0 0 8px; }
+    .sub { text-align: center; color: #b7c7d6; margin-bottom: 18px; }
+
+    .panel {
+      background: #1b2a38;
+      border: 1px solid #31495d;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    h2 { margin: 0 0 14px; font-size: 20px; }
+
+    .button-row, .select-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+
+    .select-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 210px;
+    }
+
+    label { color: #b7c7d6; font-size: 14px; font-weight: bold; }
+
+    select, button {
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    select {
+      background: #0c141c;
+      color: white;
+      border: 1px solid #45657c;
+    }
+
+    button { border: none; cursor: pointer; }
+    button:disabled, select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #leagueBtn { background: #c99cff; color: #261033; }
+    #friendlyBtn, #autoBtn { background: #6ab7ff; color: #071827; }
+    #startBtn { background: #36c275; color: #07140d; }
+    #nextBtn { background: #ffd166; color: #2b2100; }
+    #resetBtn { background: #ff6b6b; color: white; }
+    #nextMatchBtn { background: #c99cff; color: #261033; }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: center;
+      text-align: center;
+    }
+
+    .team-name { font-size: 25px; font-weight: bold; }
+    .score { font-size: 58px; font-weight: bold; }
+    .time { font-size: 36px; font-weight: bold; color: #ffd166; }
+    .half { color: #b7c7d6; margin-top: 5px; }
+
+    .battle-stage {
+      display: grid;
+      grid-template-columns: 1fr 120px 1fr;
+      gap: 18px;
+      align-items: center;
+      text-align: center;
+    }
+
+    .player-card {
+      min-height: 250px;
+      background: #0c141c;
+      border: 1px solid #31495d;
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .player-photo {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 4px solid #6ab7ff;
+      background: #243947;
+    }
+
+    .player-team { color: #7fc7ff; font-size: 14px; margin-top: 10px; }
+    .player-role { color: #ffd166; font-size: 15px; font-weight: bold; margin-top: 5px; }
+    .player-name { font-size: 27px; font-weight: bold; margin-top: 6px; }
+
+    .vs-box {
+      font-size: 38px;
+      color: #ffd166;
+      font-weight: bold;
+    }
+
+    #battle {
+      text-align: center;
+      margin-top: 16px;
+      color: #b7c7d6;
+      font-weight: bold;
+    }
+
+    #comment {
+      text-align: center;
+      background: #0c141c;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 15px;
+      min-height: 52px;
+      font-size: 17px;
+      color: #eaf4ff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .log {
+      height: 430px;
+      overflow-y: auto;
+      background: #0c141c;
+      border: 1px solid #31495d;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .log-item {
+      padding: 10px;
+      border-bottom: 1px solid #263a4a;
+      line-height: 1.5;
+    }
+
+    .goal { color: #ffd166; }
+    .save { color: #7fc7ff; }
+    .draw { color: #c99cff; }
+    .notice { color: #83e7a7; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 9px 6px;
+      text-align: center;
+      border-bottom: 1px solid #31495d;
+    }
+
+    th { color: #b7c7d6; }
+    .leader { background: #3b3320; }
+
+    .schedule-item {
+      background: #0c141c;
+      border: 1px solid #31495d;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      color: #b7c7d6;
+    }
+
+    .schedule-item.done { border-color: #36c275; color: #d8ffe6; }
+    .schedule-item.current { border-color: #ffd166; color: #ffd166; }
+
+    .player-ranking-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .record-box {
+      background: #0c141c;
+      border: 1px solid #31495d;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .record-box h3 {
+      margin: 0 0 10px;
+      color: #ffd166;
+      font-size: 17px;
+    }
+
+    .record-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #263a4a;
+      padding: 8px 0;
+      gap: 8px;
+    }
+
+    .record-rank { color: #ffd166; font-weight: bold; min-width: 30px; }
+    .record-name { font-weight: bold; }
+    .record-team { color: #b7c7d6; font-size: 11px; margin-left: 3px; }
+    .record-value { color: #7fc7ff; font-weight: bold; }
+
+    .leader-card-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .leader-card {
+      background: #0c141c;
+      border: 1px solid #31495d;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .leader-label { color: #ffd166; font-weight: bold; margin-bottom: 10px; }
+
+    .leader-photo {
+      width: 115px;
+      height: 115px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #ffd166;
+      background: #243947;
+    }
+
+    .leader-name { font-size: 19px; font-weight: bold; margin-top: 9px; }
+    .leader-info { color: #7fc7ff; margin-top: 4px; font-size: 14px; }
+
+    .highlight {
+      display: none;
+      margin-top: 16px;
+      text-align: center;
+      background: #263a4a;
+      border: 2px solid #ffd166;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .highlight.show { display: block; }
+
+    .highlight-photo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #ffd166;
+    }
+
+    .highlight-title {
+      color: #ffd166;
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .highlight-text { margin-top: 5px; color: #eaf4ff; }
+
+    .champion-panel {
+      text-align: center;
+      border: 2px solid #ffd166;
+      background: #202016;
+    }
+
+    .champion-team-name {
+      color: #ffd166;
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 18px;
+    }
+
+    .champion-players {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .champion-player {
+      width: 140px;
+      background: #0c141c;
+      border: 1px solid #705f25;
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .champion-player-photo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #ffd166;
+      background: #243947;
+    }
+
+    .champion-player-role { color: #b7c7d6; font-size: 12px; margin-top: 6px; }
+    .champion-player-name { font-weight: bold; margin-top: 3px; }
+
+    .hidden { display: none; }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .log { height: 430px; }
+      .leader-card-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 760px) {
+      body { padding: 12px; }
+      .scoreboard, .battle-stage, .player-ranking-grid { grid-template-columns: 1fr; }
+      .score { font-size: 46px; }
+      .vs-box { font-size: 24px; }
+      .player-card { min-height: auto; }
+      .player-photo { width: 120px; height: 120px; }
+    }
+
+    @media (max-width: 500px) {
+      .leader-card-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>⚽ 미소녀즈 리그</h1>
+    <div class="sub">넵튠 · 문 · 썬 · 제니스 / 자동 중계 · 팀 순위 · 개인 기록</div>
+
+    <section class="panel">
+      <h2>경기 모드</h2>
+      <div class="button-row">
+        <button id="leagueBtn">🏆 새 리그 시작</button>
+        <button id="friendlyBtn">⚽ 친선 경기 모드</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 id="matchTitle">친선 경기 팀 선택</h2>
+
+      <div class="select-row">
+        <div class="select-box">
+          <label for="teamA">A팀 / 전반 공격팀</label>
+          <select id="teamA">
+            <option value="neptune">넵튠</option>
+            <option value="moon">문</option>
+            <option value="sun">썬</option>
+            <option value="zenith">제니스</option>
+          </select>
+        </div>
+
+        <div style="font-size:24px;color:#ffd166;font-weight:bold;">VS</div>
+
+        <div class="select-box">
+          <label for="teamB">B팀 / 후반 공격팀</label>
+          <select id="teamB">
+            <option value="moon">문</option>
+            <option value="neptune">넵튠</option>
+            <option value="sun">썬</option>
+            <option value="zenith">제니스</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="button-row" style="margin-top:16px;">
+        <button id="startBtn">▶ 경기 시작</button>
+        <button id="nextBtn" disabled>⏭ 1분 진행</button>
+        <button id="autoBtn" disabled>⏱ 자동 진행</button>
+        <button id="resetBtn">↻ 현재 경기 초기화</button>
+        <button id="nextMatchBtn" class="hidden">다음 리그 경기</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="scoreboard">
+        <div>
+          <div class="team-name" id="nameA">넵튠</div>
+          <div class="score" id="scoreA">0</div>
+        </div>
+
+        <div>
+          <div class="time" id="time">0분</div>
+          <div class="half" id="half">경기 시작 전</div>
+        </div>
+
+        <div>
+          <div class="team-name" id="nameB">문</div>
+          <div class="score" id="scoreB">0</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="battle-stage">
+        <div class="player-card">
+          <img id="attackerPhoto" class="player-photo" src="" alt="공격수">
+          <div id="attackerTeam" class="player-team">공격팀</div>
+          <div id="attackerRole" class="player-role">공1</div>
+          <div id="attackerName" class="player-name">-</div>
+        </div>
+
+        <div class="vs-box">VS</div>
+
+        <div class="player-card">
+          <img id="defenderPhoto" class="player-photo" src="" alt="수비수">
+          <div id="defenderTeam" class="player-team">수비팀</div>
+          <div id="defenderRole" class="player-role">수1</div>
+          <div id="defenderName" class="player-name">-</div>
+        </div>
+      </div>
+
+      <div id="battle">경기 시작을 기다리고 있습니다.</div>
+      <div id="comment">팀을 선택하고 경기 시작 버튼을 눌러주세요.</div>
+
+      <div id="highlight" class="highlight">
+        <img id="highlightPhoto" class="highlight-photo" src="" alt="하이라이트">
+        <div id="highlightTitle" class="highlight-title"></div>
+        <div id="highlightText" class="highlight-text"></div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>📻 실시간 중계</h2>
+        <div id="log" class="log"></div>
+      </section>
+
+      <section class="panel">
+        <h2>🏆 리그 순위</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>팀</th>
+              <th>경기</th>
+              <th>승</th>
+              <th>무</th>
+              <th>패</th>
+              <th>득점</th>
+              <th>실점</th>
+              <th>득실</th>
+              <th>승점</th>
+            </tr>
+          </thead>
+          <tbody id="ranking"></tbody>
+        </table>
+
+        <h2 style="margin-top:22px;">📅 리그 일정</h2>
+        <div id="schedule"></div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>⭐ 개인 기록 1위</h2>
+
+      <div class="leader-card-grid">
+        <div class="leader-card">
+          <div class="leader-label">득점 1위</div>
+          <img id="goalLeaderPhoto" class="leader-photo" src="" alt="득점 1위">
+          <div id="goalLeaderName" class="leader-name">-</div>
+          <div id="goalLeaderInfo" class="leader-info">0골</div>
+        </div>
+
+        <div class="leader-card">
+          <div class="leader-label">선방 1위</div>
+          <img id="saveLeaderPhoto" class="leader-photo" src="" alt="선방 1위">
+          <div id="saveLeaderName" class="leader-name">-</div>
+          <div id="saveLeaderInfo" class="leader-info">0회</div>
+        </div>
+
+        <div class="leader-card">
+          <div class="leader-label">돌파 1위</div>
+          <img id="dribbleLeaderPhoto" class="leader-photo" src="" alt="돌파 1위">
+          <div id="dribbleLeaderName" class="leader-name">-</div>
+          <div id="dribbleLeaderInfo" class="leader-info">0회</div>
+        </div>
+
+        <div class="leader-card">
+          <div class="leader-label">수비 성공 1위</div>
+          <img id="tackleLeaderPhoto" class="leader-photo" src="" alt="수비 성공 1위">
+          <div id="tackleLeaderName" class="leader-name">-</div>
+          <div id="tackleLeaderInfo" class="leader-info">0회</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>📊 개인 기록 순위</h2>
+
+      <div class="player-ranking-grid">
+        <div class="record-box">
+          <h3>⚽ 득점</h3>
+          <div id="goalRanking"></div>
+        </div>
+
+        <div class="record-box">
+          <h3>🧤 선방</h3>
+          <div id="saveRanking"></div>
+        </div>
+
+        <div class="record-box">
+          <h3>💨 돌파</h3>
+          <div id="dribbleRanking"></div>
+        </div>
+
+        <div class="record-box">
+          <h3>🛡 수비 성공</h3>
+          <div id="tackleRanking"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="championPanel" class="panel champion-panel hidden">
+      <h2 id="championTitle">🏆 미소녀즈 리그 우승</h2>
+      <div id="championTeamName" class="champion-team-name"></div>
+      <div id="championPlayers" class="champion-players"></div>
+    </section>
+  </div>
+
+  <script>
+    const fallbackPhoto = "https://placehold.co/300x300/243947/ffffff?text=⚽";
+
+    const teams = {
+      neptune: {
+        name: "넵튠",
+        attack: [
+          ["공1", "김나경", "images/n1.jpg"],
+          ["공2", "니엔", "images/n2.jpg"]
+        ],
+        defense: [
+          ["수1", "윤서연", "images/n3.jpg"],
+          ["수2", "코토네", "images/n4.jpg"],
+          ["수3", "서아", "images/n5.jpg"],
+          ["킾", "서다현", "images/n6.jpg"]
+        ]
+      },
+      moon: {
+        name: "문",
+        attack: [
+          ["공1", "카에데", "images/m1.jpg"],
+          ["공2", "박소현", "images/m2.jpg"]
+        ],
+        defense: [
+          ["수1", "린", "images/m3.jpg"],
+          ["수2", "설린", "images/m4.jpg"],
+          ["수3", "지연", "images/m5.jpg"],
+          ["킾", "박시온", "images/m6.jpg"]
+        ]
+      },
+      sun: {
+        name: "썬",
+        attack: [
+          ["공1", "정혜린", "images/s1.jpg"],
+          ["공2", "신위", "images/s2.jpg"]
+        ],
+        defense: [
+          ["수1", "김채연", "images/s3.jpg"],
+          ["수2", "김유연", "images/s4.jpg"],
+          ["수3", "김채원", "images/s5.jpg"],
+          ["킾", "마유", "images/s6.jpg"]
+        ]
+      },
+      zenith: {
+        name: "제니스",
+        attack: [
+          ["공1", "공유빈", "images/z1.jpg"],
+          ["공2", "곽연지", "images/z2.jpg"]
+        ],
+        defense: [
+          ["수1", "이지우", "images/z3.jpg"],
+          ["수2", "주빈", "images/z4.jpg"],
+          ["수3", "정하연", "images/z5.jpg"],
+          ["킾", "김수민", "images/z6.jpg"]
+        ]
+      }
+    };
+
+    const leagueFixtures = [
+      { round: 1, a: "neptune", b: "moon" },
+      { round: 1, a: "sun", b: "zenith" },
+      { round: 2, a: "neptune", b: "sun" },
+      { round: 2, a: "moon", b: "zenith" },
+      { round: 3, a: "neptune", b: "zenith" },
+      { round: 3, a: "moon", b: "sun" }
+    ];
+
+    const $ = id => document.getElementById(id);
+    const playerStats = {};
+
+    let league = {
+      active: false,
+      finished: false,
+      currentIndex: 0,
+      results: [],
+      stats: {}
+    };
+
+    let game = {
+      started: false,
+      ended: false,
+      autoRunning: false,
+      timer: null,
+      minute: 0,
+      half: 1,
+      a: "neptune",
+      b: "moon",
+      scoreA: 0,
+      scoreB: 0,
+      attackingTeam: "neptune",
+      defendingTeam: "moon",
+      attackerIndex: 0,
+      defenderIndex: 0,
+
+      // 수비수에게 막힌 횟수
+      // 1회: 공1 -> 공2
+      // 2회: 공2 -> 공1
+      // 3회: 공1 -> 공2
+      // 4회: 공2가 막히면 공수교대
+      fieldBlockCount: 0,
+
+      keeperDrawCount: 0
+    };
+
+    function setImage(el, path) {
+      el.src = path || fallbackPhoto;
+      el.onerror = function () {
+        el.onerror = null;
+        el.src = fallbackPhoto;
+      };
+    }
+
+    function randomPick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function playerText(player) {
+      return player[1];
+    }
+
+    function createPlayerStats() {
+      Object.keys(playerStats).forEach(key => delete playerStats[key]);
+
+      Object.keys(teams).forEach(teamKey => {
+        [...teams[teamKey].attack, ...teams[teamKey].defense].forEach(player => {
+          const key = teamKey + "_" + player[1];
+
+          playerStats[key] = {
+            key,
+            teamKey,
+            teamName: teams[teamKey].name,
+            role: player[0],
+            name: player[1],
+            photo: player[2],
+            played: 0,
+            goals: 0,
+            saves: 0,
+            dribbles: 0,
+            tackles: 0
+          };
+        });
+      });
+    }
+
+    function addPlayerStat(teamKey, player, stat, amount = 1) {
+      const target = playerStats[teamKey + "_" + player[1]];
+      if (target) target[stat] += amount;
+    }
+
+    function createEmptyStats() {
+      const stats = {};
+
+      Object.keys(teams).forEach(key => {
+        stats[key] = {
+          played: 0,
+          win: 0,
+          draw: 0,
+          lose: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          points: 0
+        };
+      });
+
+      return stats;
+    }
+
+    function addLog(text, className = "") {
+      const div = document.createElement("div");
+      div.className = "log-item " + className;
+      div.innerHTML = text;
+      $("log").prepend(div);
+    }
+
+    function showHighlight(player, title, text) {
+      setImage($("highlightPhoto"), player[2]);
+      $("highlightTitle").textContent = title;
+      $("highlightText").textContent = text;
+      $("highlight").classList.add("show");
+    }
+
+    function hideHighlight() {
+      $("highlight").classList.remove("show");
+    }
+
+    function updateBattleCards() {
+      const attacker = teams[game.attackingTeam].attack[game.attackerIndex];
+      const defender = teams[game.defendingTeam].defense[game.defenderIndex];
+
+      setImage($("attackerPhoto"), attacker[2]);
+      setImage($("defenderPhoto"), defender[2]);
+
+      $("attackerTeam").textContent = teams[game.attackingTeam].name + " 공격";
+      $("defenderTeam").textContent = teams[game.defendingTeam].name + " 수비";
+      $("attackerRole").textContent = attacker[0];
+      $("defenderRole").textContent = defender[0];
+      $("attackerName").textContent = attacker[1];
+      $("defenderName").textContent = defender[1];
+
+      $("battle").textContent =
+        teams[game.attackingTeam].name + " " + attacker[1] +
+        " vs " +
+        teams[game.defendingTeam].name + " " + defender[1];
+    }
+
+    function updateScoreboard() {
+      $("nameA").textContent = teams[game.a].name;
+      $("nameB").textContent = teams[game.b].name;
+      $("scoreA").textContent = game.scoreA;
+      $("scoreB").textContent = game.scoreB;
+      $("time").textContent = game.minute + "분";
+
+      if (!game.started) $("half").textContent = "경기 시작 전";
+      else if (game.ended) $("half").textContent = "경기 종료";
+      else $("half").textContent = game.half === 1 ? "전반전" : "후반전";
+
+      updateBattleCards();
+    }
+
+    function getLeader(stat, roles) {
+      return Object.values(playerStats)
+        .filter(p => roles.includes(p.role))
+        .sort((a, b) => b[stat] - a[stat] || a.name.localeCompare(b.name, "ko"))[0];
+    }
+
+    function renderLeaderCard(photoId, nameId, infoId, stat, unit, roles) {
+      const leader = getLeader(stat, roles);
+      if (!leader) return;
+
+      setImage($(photoId), leader.photo);
+      $(nameId).textContent = leader.name + " · " + leader.teamName;
+      $(infoId).textContent = leader[stat] + unit;
+    }
+
+    function renderLeaderCards() {
+      renderLeaderCard("goalLeaderPhoto", "goalLeaderName", "goalLeaderInfo", "goals", "골", ["공1", "공2"]);
+      renderLeaderCard("saveLeaderPhoto", "saveLeaderName", "saveLeaderInfo", "saves", "선방", ["킾"]);
+      renderLeaderCard("dribbleLeaderPhoto", "dribbleLeaderName", "dribbleLeaderInfo", "dribbles", "돌파", ["공1", "공2"]);
+      renderLeaderCard("tackleLeaderPhoto", "tackleLeaderName", "tackleLeaderInfo", "tackles", "수비 성공", ["수1", "수2", "수3"]);
+    }
+
+    function renderOnePlayerRanking(id, stat, unit, roles) {
+      const target = $(id);
+      target.innerHTML = "";
+
+      Object.values(playerStats)
+        .filter(p => roles.includes(p.role))
+        .sort((a, b) => b[stat] - a[stat] || a.name.localeCompare(b.name, "ko"))
+        .slice(0, 5)
+        .forEach((p, index) => {
+          const row = document.createElement("div");
+          row.className = "record-row";
+          row.innerHTML = `
+            <div class="record-rank">${index + 1}위</div>
+            <div>
+              <span class="record-name">${p.name}</span>
+              <span class="record-team">${p.teamName}</span>
+            </div>
+            <div class="record-value">${p[stat]}${unit}</div>
+          `;
+          target.appendChild(row);
+        });
+    }
+
+    function renderPlayerRankings() {
+      renderOnePlayerRanking("goalRanking", "goals", "골", ["공1", "공2"]);
+      renderOnePlayerRanking("saveRanking", "saves", "회", ["킾"]);
+      renderOnePlayerRanking("dribbleRanking", "dribbles", "회", ["공1", "공2"]);
+      renderOnePlayerRanking("tackleRanking", "tackles", "회", ["수1", "수2", "수3"]);
+      renderLeaderCards();
+    }
+
+    function showChampionTeam(teamKey) {
+      const team = teams[teamKey];
+
+      $("championPanel").classList.remove("hidden");
+      $("championTitle").textContent = "🏆 미소녀즈 리그 우승";
+      $("championTeamName").textContent = team.name + " 챔피언";
+      $("championPlayers").innerHTML = "";
+
+      [...team.attack, ...team.defense].forEach(player => {
+        const card = document.createElement("div");
+        card.className = "champion-player";
+        card.innerHTML = `
+          <img class="champion-player-photo" src="${player[2]}" alt="${player[1]}">
+          <div class="champion-player-role">${player[0]}</div>
+          <div class="champion-player-name">${player[1]}</div>
+        `;
+
+        const img = card.querySelector("img");
+        img.onerror = function () {
+          img.onerror = null;
+          img.src = fallbackPhoto;
+        };
+
+        $("championPlayers").appendChild(card);
+      });
+    }
+
+    function hideChampionTeam() {
+      $("championPanel").classList.add("hidden");
+      $("championPlayers").innerHTML = "";
+    }
+
+    function renderRanking() {
+      const keys = Object.keys(teams).sort((a, b) => {
+        const A = league.stats[a];
+        const B = league.stats[b];
+        const diffA = A.goalsFor - A.goalsAgainst;
+        const diffB = B.goalsFor - B.goalsAgainst;
+
+        return B.points - A.points || diffB - diffA || B.goalsFor - A.goalsFor;
+      });
+
+      $("ranking").innerHTML = "";
+
+      keys.forEach((key, index) => {
+        const s = league.stats[key];
+        const diff = s.goalsFor - s.goalsAgainst;
+        const tr = document.createElement("tr");
+
+        if (index === 0 && league.active) tr.className = "leader";
+
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${teams[key].name}</td>
+          <td>${s.played}</td>
+          <td>${s.win}</td>
+          <td>${s.draw}</td>
+          <td>${s.lose}</td>
+          <td>${s.goalsFor}</td>
+          <td>${s.goalsAgainst}</td>
+          <td>${diff > 0 ? "+" : ""}${diff}</td>
+          <td><b>${s.points}</b></td>
+        `;
+
+        $("ranking").appendChild(tr);
+      });
+    }
+
+    function renderSchedule() {
+      $("schedule").innerHTML = "";
+
+      leagueFixtures.forEach((fixture, index) => {
+        const item = document.createElement("div");
+        item.className = "schedule-item";
+
+        let text = `[${fixture.round}라운드 ${(index % 2) + 1}경기] ${teams[fixture.a].name} vs ${teams[fixture.b].name}`;
+
+        if (league.results[index]) {
+          text += ` → ${league.results[index].scoreA} : ${league.results[index].scoreB}`;
+          item.classList.add("done");
+        } else if (league.active && !league.finished && index === league.currentIndex) {
+          text += " ← 다음 경기";
+          item.classList.add("current");
+        }
+
+        item.textContent = text;
+        $("schedule").appendChild(item);
+      });
+    }
+
+    function renderLeague() {
+      renderRanking();
+      renderSchedule();
+    }
+
+    function stopAuto() {
+      if (game.timer) clearInterval(game.timer);
+      game.timer = null;
+      game.autoRunning = false;
+      $("autoBtn").textContent = "⏱ 자동 진행";
+    }
+
+    function setupMatch(a, b) {
+      stopAuto();
+
+      game = {
+        started: false,
+        ended: false,
+        autoRunning: false,
+        timer: null,
+        minute: 0,
+        half: 1,
+        a,
+        b,
+        scoreA: 0,
+        scoreB: 0,
+        attackingTeam: a,
+        defendingTeam: b,
+        attackerIndex: 0,
+        defenderIndex: 0,
+        fieldBlockCount: 0,
+        keeperDrawCount: 0
+      };
+
+      $("log").innerHTML = "";
+      $("comment").textContent = "";
+      hideHighlight();
+
+      $("startBtn").disabled = false;
+      $("nextBtn").disabled = true;
+      $("autoBtn").disabled = true;
+      $("nextMatchBtn").classList.add("hidden");
+
+      updateScoreboard();
+    }
+
+    function startLeague() {
+      createPlayerStats();
+      hideChampionTeam();
+
+      league = {
+        active: true,
+        finished: false,
+        currentIndex: 0,
+        results: [],
+        stats: createEmptyStats()
+      };
+
+      const fixture = leagueFixtures[0];
+
+      $("teamA").value = fixture.a;
+      $("teamB").value = fixture.b;
+      $("teamA").disabled = true;
+      $("teamB").disabled = true;
+      $("matchTitle").textContent = "🏆 리그 진행 중: 일정에 따라 팀이 자동 선택됩니다";
+
+      setupMatch(fixture.a, fixture.b);
+
+      $("battle").textContent = "리그 1라운드 1경기 준비 완료: 넵튠 vs 문";
+      $("comment").textContent = "경기 시작 버튼을 누르면 리그 첫 경기가 시작됩니다.";
+
+      renderLeague();
+      renderPlayerRankings();
+    }
+
+    function startFriendly() {
+      createPlayerStats();
+      hideChampionTeam();
+
+      league = {
+        active: false,
+        finished: false,
+        currentIndex: 0,
+        results: [],
+        stats: createEmptyStats()
+      };
+
+      $("teamA").disabled = false;
+      $("teamB").disabled = false;
+      $("matchTitle").textContent = "친선 경기 팀 선택";
+
+      setupMatch($("teamA").value, $("teamB").value);
+
+      $("battle").textContent = "친선 경기 팀을 선택한 뒤 경기 시작 버튼을 눌러주세요.";
+
+      renderLeague();
+      renderPlayerRankings();
+    }
+
+    function startMatch() {
+      if (game.started || game.ended) return;
+
+      if (!league.active && $("teamA").value === $("teamB").value) {
+        alert("같은 팀끼리는 대결할 수 없습니다.");
+        return;
+      }
+
+      if (!league.active) {
+        game.a = $("teamA").value;
+        game.b = $("teamB").value;
+        game.attackingTeam = game.a;
+        game.defendingTeam = game.b;
+      }
+
+      game.started = true;
+
+      [...teams[game.a].attack, ...teams[game.a].defense].forEach(p => addPlayerStat(game.a, p, "played"));
+      [...teams[game.b].attack, ...teams[game.b].defense].forEach(p => addPlayerStat(game.b, p, "played"));
+
+      $("startBtn").disabled = true;
+      $("nextBtn").disabled = false;
+      $("autoBtn").disabled = false;
+
+      updateScoreboard();
+      renderPlayerRankings();
+
+      $("comment").textContent = "킥오프! 첫 번째 공격이 시작됩니다.";
+      addLog(`<b>킥오프!</b> <span class="notice">${teams[game.a].name}이 전반 공격을 시작합니다.</span>`, "notice");
+    }
+
+    function changePossession(reason) {
+      const oldAttackingTeam = game.attackingTeam;
+
+      game.attackingTeam = game.defendingTeam;
+      game.defendingTeam = oldAttackingTeam;
+
+      game.attackerIndex = 0;
+      game.defenderIndex = 0;
+      game.fieldBlockCount = 0;
+      game.keeperDrawCount = 0;
+
+      addLog(
+        `<b>${game.minute}분</b> <span class="notice">공수 전환! 이제 ${teams[game.attackingTeam].name}이 공격합니다. (${reason})</span>`,
+        "notice"
+      );
+    }
+
+    function applyLeagueResult() {
+      const A = league.stats[game.a];
+      const B = league.stats[game.b];
+
+      A.played++;
+      B.played++;
+
+      A.goalsFor += game.scoreA;
+      A.goalsAgainst += game.scoreB;
+      B.goalsFor += game.scoreB;
+      B.goalsAgainst += game.scoreA;
+
+      if (game.scoreA > game.scoreB) {
+        A.win++;
+        A.points += 3;
+        B.lose++;
+      } else if (game.scoreB > game.scoreA) {
+        B.win++;
+        B.points += 3;
+        A.lose++;
+      } else {
+        A.draw++;
+        B.draw++;
+        A.points++;
+        B.points++;
+      }
+
+      league.results[league.currentIndex] = {
+        scoreA: game.scoreA,
+        scoreB: game.scoreB
+      };
+
+      league.currentIndex++;
+      renderLeague();
+    }
+
+    function getLeagueWinner() {
+      return Object.keys(teams).sort((a, b) => {
+        const A = league.stats[a];
+        const B = league.stats[b];
+        const diffA = A.goalsFor - A.goalsAgainst;
+        const diffB = B.goalsFor - B.goalsAgainst;
+
+        return B.points - A.points || diffB - diffA || B.goalsFor - A.goalsFor;
+      })[0];
+    }
+
+    function finishMatch() {
+      game.ended = true;
+      stopAuto();
+
+      $("nextBtn").disabled = true;
+      $("autoBtn").disabled = true;
+
+      const result = `${teams[game.a].name} ${game.scoreA} : ${game.scoreB} ${teams[game.b].name}`;
+
+      $("battle").textContent = "경기 종료: " + result;
+
+      if (game.scoreA > game.scoreB) $("comment").textContent = teams[game.a].name + " 승리!";
+      else if (game.scoreB > game.scoreA) $("comment").textContent = teams[game.b].name + " 승리!";
+      else $("comment").textContent = "무승부!";
+
+      addLog(`<b>90분</b> <span class="notice">경기 종료! ${result}</span>`, "notice");
+
+      if (league.active) {
+        applyLeagueResult();
+
+        if (league.currentIndex >= leagueFixtures.length) {
+          league.finished = true;
+          const winner = getLeagueWinner();
+
+          $("comment").textContent = `🏆 리그 종료! 최종 우승팀은 ${teams[winner].name}입니다!`;
+          addLog(`<span class="notice">🏆 6경기 종료! ${teams[winner].name}이 리그 우승을 차지합니다!</span>`, "notice");
+
+          showChampionTeam(winner);
+        } else {
+          $("nextMatchBtn").classList.remove("hidden");
+
+          const next = leagueFixtures[league.currentIndex];
+          $("comment").textContent = `다음 경기: ${teams[next.a].name} vs ${teams[next.b].name}`;
+        }
+      }
+
+      updateScoreboard();
+      renderPlayerRankings();
+    }
+
+    function playOneMinute() {
+      if (!game.started || game.ended) return;
+
+      game.minute++;
+      hideHighlight();
+
+      const attackTeam = teams[game.attackingTeam];
+      const defenseTeam = teams[game.defendingTeam];
+      const attacker = attackTeam.attack[game.attackerIndex];
+      const defender = defenseTeam.defense[game.defenderIndex];
+
+      const result = randomPick(["attack", "draw", "defense"]);
+
+      const prefix =
+        `<b>${game.minute}분</b> ` +
+        `${attackTeam.name} ${attacker[1]} vs ${defenseTeam.name} ${defender[1]}<br>`;
+
+      if (defender[0] !== "킾") {
+        if (result === "attack") {
+          addPlayerStat(game.attackingTeam, attacker, "dribbles");
+
+          const text = randomPick([
+            `${playerText(attacker)}이 ${playerText(defender)}을 제치고 돌파합니다!`,
+            `${playerText(attacker)}의 개인기! ${playerText(defender)}을 통과합니다!`,
+            `${playerText(attacker)}이 공간을 파고듭니다. 수비가 흔들립니다!`,
+            `${playerText(attacker)}이 수비 라인을 무너뜨립니다. 다음 수비수가 나섭니다!`,
+            `${playerText(defender)}의 압박을 벗어난 ${playerText(attacker)}! 공격이 계속됩니다.`
+          ]);
+
+          $("comment").textContent = text;
+          addLog(prefix + `<span class="goal">${text}</span>`, "goal");
+
+          game.defenderIndex++;
+
+          // 수비수를 돌파해도 막힌 누적 횟수는 초기화하지 않음
+          // 공1, 공2가 총 4번 막힐 때까지 누적 유지
+          game.keeperDrawCount = 0;
+        }
+
+        else if (result === "defense") {
+          addPlayerStat(game.defendingTeam, defender, "tackles");
+
+          const blockText = randomPick([
+            `${playerText(defender)}의 압박! ${playerText(attacker)}은 동료에게 패스를 보냅니다.`,
+            `${playerText(defender)}이 길목을 차단합니다. 다음 공격수가 공을 이어받습니다.`,
+            `${playerText(attacker)}의 돌파가 ${playerText(defender)}에게 막힙니다! 공격권은 유지됩니다.`,
+            `${playerText(defender)}의 태클 성공! 공격팀은 다시 패스로 풀어갑니다.`,
+            `${playerText(defender)}이 공을 끊어냈지만 공격팀이 세컨드 볼을 잡습니다.`
+          ]);
+
+          addLog(prefix + `<span class="save">${blockText}</span>`, "save");
+
+          // 막힌 횟수 누적
+          game.fieldBlockCount++;
+
+          // 총 4번 막히면 공수교대
+          if (game.fieldBlockCount >= 4) {
+            const endText =
+              `${playerText(attacker)}이 이번 차단에 걸립니다. 공격권이 넘어갑니다!`;
+
+            $("comment").textContent = endText;
+
+            addLog(
+              `<b>${game.minute}분</b> <span class="save">${endText}</span>`,
+              "save"
+            );
+
+            changePossession("공격수 누적 4회 차단");
+          } else {
+            // 공1 -> 공2 / 공2 -> 공1
+            game.attackerIndex = game.attackerIndex === 0 ? 1 : 0;
+
+            const nextAttacker = attackTeam.attack[game.attackerIndex];
+
+            const passText =
+              `${playerText(attacker)}이 막히자 ${playerText(nextAttacker)}에게 패스가 연결됩니다.`;
+
+            $("comment").textContent = passText;
+
+            addLog(
+              `<b>${game.minute}분</b> <span class="notice">${passText}</span>`,
+              "notice"
+            );
+          }
+
+          game.keeperDrawCount = 0;
+        }
+
+        else {
+          const text = randomPick([
+            `${playerText(attacker)}과 ${playerText(defender)}의 팽팽한 경합! 승부는 계속됩니다.`,
+            `서로 물러서지 않습니다. 같은 조합으로 다시 맞붙습니다!`,
+            `공방전이 이어집니다! 아직 누구도 우위를 잡지 못했습니다.`,
+            `${playerText(attacker)}과 ${playerText(defender)}, 공을 놓고 끝없는 신경전입니다.`
+          ]);
+
+          $("comment").textContent = text;
+          addLog(prefix + `<span class="draw">${text}</span>`, "draw");
+
+          game.keeperDrawCount = 0;
+        }
+      }
+
+      else {
+        if (result === "attack") {
+          addPlayerStat(game.attackingTeam, attacker, "goals");
+
+          if (game.attackingTeam === game.a) game.scoreA++;
+          else game.scoreB++;
+
+          const text = randomPick([
+            `골!!! ${playerText(attacker)}이 골키퍼를 뚫어냅니다!`,
+            `골망이 흔들립니다! ${playerText(attacker)}의 결정력!`,
+            `들어갑니다! ${playerText(attacker)}의 완벽한 마무리!`,
+            `${playerText(attacker)}의 슈팅이 골문 구석에 꽂힙니다!`,
+            `골키퍼도 손쓸 수 없습니다! ${playerText(attacker)}의 득점입니다!`
+          ]);
+
+          $("comment").textContent = text;
+          addLog(prefix + `<span class="goal">${text}</span>`, "goal");
+          showHighlight(attacker, "⚽ GOAL!", text);
+
+          changePossession("득점 후 킥오프");
+        }
+
+        else if (result === "defense") {
+          addPlayerStat(game.defendingTeam, defender, "saves");
+
+          const text = randomPick([
+            `${playerText(defender)}의 슈퍼 세이브! 공격을 막아냅니다!`,
+            `골키퍼 ${playerText(defender)}이 공을 쳐냅니다!`,
+            `${playerText(defender)}의 환상적인 선방입니다!`,
+            `일대일 찬스! 하지만 ${playerText(defender)}이 끝까지 버텨냅니다.`,
+            `${playerText(defender)}이 공을 품에 안습니다. 공격은 여기까지입니다.`
+          ]);
+
+          $("comment").textContent = text;
+          addLog(prefix + `<span class="save">${text}</span>`, "save");
+          showHighlight(defender, "🧤 SUPER SAVE!", text);
+
+          changePossession("골키퍼 선방");
+        }
+
+        else {
+          game.keeperDrawCount++;
+
+          if (game.keeperDrawCount === 1) {
+            game.attackerIndex = game.attackerIndex === 0 ? 1 : 0;
+
+            const nextAttacker = attackTeam.attack[game.attackerIndex];
+
+            const text = randomPick([
+              `골문 앞 혼전! ${playerText(defender)}이 완전히 처리하지 못했고 ${playerText(nextAttacker)}에게 세컨드 찬스입니다!`,
+              `공이 골문 앞에 흐릅니다! ${playerText(nextAttacker)}이 다시 마무리를 노립니다.`,
+              `${playerText(defender)}의 손끝에 걸렸지만 끝난 게 아닙니다. ${playerText(nextAttacker)}이 재도전합니다!`
+            ]);
+
+            $("comment").textContent = text;
+            addLog(prefix + `<span class="draw">${text}</span>`, "draw");
+          }
+
+          else {
+            addPlayerStat(game.defendingTeam, defender, "saves");
+
+            const text = randomPick([
+              `연속 슈팅도 막힙니다! ${playerText(defender)}이 끝내 공을 확보합니다.`,
+              `두 번째 혼전 끝에 ${playerText(defender)}이 공을 잡아냅니다! 선방 처리입니다.`,
+              `${playerText(defender)}이 끝까지 집중력을 잃지 않습니다. 공격은 마무리됩니다.`
+            ]);
+
+            $("comment").textContent = text;
+            addLog(prefix + `<span class="save">${text}</span>`, "save");
+            showHighlight(defender, "🧤 결정적 선방!", text);
+
+            changePossession("골문 앞 두 번째 무승부는 선방 처리");
+          }
+        }
+      }
+
+      if (game.minute === 45) {
+        game.half = 2;
+        game.attackingTeam = game.b;
+        game.defendingTeam = game.a;
+        game.attackerIndex = 0;
+        game.defenderIndex = 0;
+        game.fieldBlockCount = 0;
+        game.keeperDrawCount = 0;
+
+        addLog(
+          `<b>45분</b> <span class="notice">전반 종료! 후반전은 ${teams[game.b].name}의 공격으로 시작합니다.</span>`,
+          "notice"
+        );
+
+        $("comment").textContent = `전반 종료! 후반전은 ${teams[game.b].name}의 공격으로 시작됩니다.`;
+      }
+
+      if (game.minute >= 90) finishMatch();
+
+      updateScoreboard();
+      renderPlayerRankings();
+    }
+
+    function toggleAutoPlay() {
+      if (!game.started || game.ended) return;
+
+      if (game.autoRunning) {
+        stopAuto();
+        $("comment").textContent = "자동 진행이 멈췄습니다.";
+        return;
+      }
+
+      game.autoRunning = true;
+      $("autoBtn").textContent = "⏸ 자동 진행 멈춤";
+
+      game.timer = setInterval(() => {
+        if (game.ended) {
+          stopAuto();
+          return;
+        }
+
+        playOneMinute();
+      }, 1000);
+    }
+
+    function prepareNextLeagueMatch() {
+      if (!league.active || league.finished) return;
+
+      const fixture = leagueFixtures[league.currentIndex];
+
+      $("teamA").value = fixture.a;
+      $("teamB").value = fixture.b;
+
+      setupMatch(fixture.a, fixture.b);
+
+      $("battle").textContent =
+        `${fixture.round}라운드 ${(league.currentIndex % 2) + 1}경기 준비: ${teams[fixture.a].name} vs ${teams[fixture.b].name}`;
+
+      $("comment").textContent = "경기 시작 버튼을 눌러 다음 리그 경기를 진행하세요.";
+
+      renderLeague();
+    }
+
+    function resetCurrentMatch() {
+      if (league.active && !league.finished) {
+        const fixture = leagueFixtures[league.currentIndex];
+        setupMatch(fixture.a, fixture.b);
+        $("battle").textContent = "현재 리그 경기가 초기화되었습니다.";
+      } else {
+        setupMatch($("teamA").value, $("teamB").value);
+        $("battle").textContent = "친선 경기가 초기화되었습니다.";
+      }
+
+      $("comment").textContent = "경기 시작 버튼을 눌러 다시 진행하세요.";
+    }
+
+    $("leagueBtn").addEventListener("click", startLeague);
+    $("friendlyBtn").addEventListener("click", startFriendly);
+    $("startBtn").addEventListener("click", startMatch);
+    $("nextBtn").addEventListener("click", playOneMinute);
+    $("autoBtn").addEventListener("click", toggleAutoPlay);
+    $("nextMatchBtn").addEventListener("click", prepareNextLeagueMatch);
+    $("resetBtn").addEventListener("click", resetCurrentMatch);
+
+    $("teamA").addEventListener("change", () => {
+      if (!league.active) setupMatch($("teamA").value, $("teamB").value);
+    });
+
+    $("teamB").addEventListener("change", () => {
+      if (!league.active) setupMatch($("teamA").value, $("teamB").value);
+    });
+
+    createPlayerStats();
+    league.stats = createEmptyStats();
+    renderLeague();
+    renderPlayerRankings();
+    updateScoreboard();
+  </script>
+</body>
+</html>
