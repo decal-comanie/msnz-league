@@ -83,6 +83,46 @@
     .time { font-size: 36px; font-weight: bold; color: #ffd166; }
     .half { color: #b7c7d6; margin-top: 5px; }
 
+    .goal-history {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid #31495d;
+    }
+
+    .goal-history-team {
+      min-height: 28px;
+      text-align: center;
+      color: #ffd166;
+      font-size: 15px;
+      font-weight: bold;
+      line-height: 1.7;
+    }
+
+    .goal-history-team.empty {
+      color: #6f8597;
+      font-weight: normal;
+    }
+
+    .goal-history-title {
+      display: block;
+      color: #b7c7d6;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .goal-minute {
+      display: inline-block;
+      margin: 2px 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #3b3320;
+      border: 1px solid #705f25;
+      color: #ffd166;
+    }
+
     .battle-stage {
       display: grid;
       grid-template-columns: 1fr 120px 1fr;
@@ -329,7 +369,7 @@
 
     @media (max-width: 760px) {
       body { padding: 12px; }
-      .scoreboard, .battle-stage, .player-ranking-grid { grid-template-columns: 1fr; }
+      .scoreboard, .battle-stage, .player-ranking-grid, .goal-history { grid-template-columns: 1fr; }
       .score { font-size: 46px; }
       .vs-box { font-size: 24px; }
       .player-card { min-height: auto; }
@@ -407,6 +447,11 @@
           <div class="team-name" id="nameB">문</div>
           <div class="score" id="scoreB">0</div>
         </div>
+      </div>
+
+      <div class="goal-history">
+        <div id="goalHistoryA" class="goal-history-team empty">넵튠 득점 기록 없음</div>
+        <div id="goalHistoryB" class="goal-history-team empty">문 득점 기록 없음</div>
       </div>
     </section>
 
@@ -622,24 +667,51 @@
       timer: null,
       minute: 0,
       half: 1,
+      halftimeWaiting: false,
       a: "neptune",
       b: "moon",
       scoreA: 0,
       scoreB: 0,
+      goalHistoryA: [],
+      goalHistoryB: [],
       attackingTeam: "neptune",
       defendingTeam: "moon",
       attackerIndex: 0,
       defenderIndex: 0,
-
-      // 수비수에게 막힌 횟수
-      // 1회: 공1 -> 공2
-      // 2회: 공2 -> 공1
-      // 3회: 공1 -> 공2
-      // 4회: 공2가 막히면 공수교대
       fieldBlockCount: 0,
-
       keeperDrawCount: 0
     };
+
+    function hasFinalConsonant(word) {
+      if (!word) return false;
+      const charCode = word.charCodeAt(word.length - 1);
+      if (charCode < 0xAC00 || charCode > 0xD7A3) return false;
+      return (charCode - 0xAC00) % 28 !== 0;
+    }
+
+    function subject(name) {
+      return name + (hasFinalConsonant(name) ? "이" : "가");
+    }
+
+    function topic(name) {
+      return name + (hasFinalConsonant(name) ? "은" : "는");
+    }
+
+    function object(name) {
+      return name + (hasFinalConsonant(name) ? "을" : "를");
+    }
+
+    function withParticle(name) {
+      return name + (hasFinalConsonant(name) ? "과" : "와");
+    }
+
+    function direction(name) {
+      return name + (hasFinalConsonant(name) ? "에게" : "에게");
+    }
+
+    function randomPick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
 
     function setImage(el, path) {
       el.src = path || fallbackPhoto;
@@ -647,10 +719,6 @@
         el.onerror = null;
         el.src = fallbackPhoto;
       };
-    }
-
-    function randomPick(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
     }
 
     function playerText(player) {
@@ -742,6 +810,38 @@
         teams[game.defendingTeam].name + " " + defender[1];
     }
 
+    function updateGoalHistory() {
+      const historyA = $("goalHistoryA");
+      const historyB = $("goalHistoryB");
+
+      const teamAName = teams[game.a].name;
+      const teamBName = teams[game.b].name;
+
+      if (game.goalHistoryA.length === 0) {
+        historyA.className = "goal-history-team empty";
+        historyA.textContent = teamAName + " 득점 기록 없음";
+      } else {
+        historyA.className = "goal-history-team";
+        historyA.innerHTML =
+          `<span class="goal-history-title">${teamAName} 득점</span>` +
+          game.goalHistoryA.map(goal =>
+            `<span class="goal-minute">${goal.minute}' ${goal.player}</span>`
+          ).join("");
+      }
+
+      if (game.goalHistoryB.length === 0) {
+        historyB.className = "goal-history-team empty";
+        historyB.textContent = teamBName + " 득점 기록 없음";
+      } else {
+        historyB.className = "goal-history-team";
+        historyB.innerHTML =
+          `<span class="goal-history-title">${teamBName} 득점</span>` +
+          game.goalHistoryB.map(goal =>
+            `<span class="goal-minute">${goal.minute}' ${goal.player}</span>`
+          ).join("");
+      }
+    }
+
     function updateScoreboard() {
       $("nameA").textContent = teams[game.a].name;
       $("nameB").textContent = teams[game.b].name;
@@ -749,11 +849,18 @@
       $("scoreB").textContent = game.scoreB;
       $("time").textContent = game.minute + "분";
 
-      if (!game.started) $("half").textContent = "경기 시작 전";
-      else if (game.ended) $("half").textContent = "경기 종료";
-      else $("half").textContent = game.half === 1 ? "전반전" : "후반전";
+      if (!game.started) {
+        $("half").textContent = "경기 시작 전";
+      } else if (game.ended) {
+        $("half").textContent = "경기 종료";
+      } else if (game.halftimeWaiting) {
+        $("half").textContent = "전반 종료 · 후반 시작 대기";
+      } else {
+        $("half").textContent = game.half === 1 ? "전반전" : "후반전";
+      }
 
       updateBattleCards();
+      updateGoalHistory();
     }
 
     function getLeader(stat, roles) {
@@ -813,8 +920,8 @@
       const team = teams[teamKey];
 
       $("championPanel").classList.remove("hidden");
-      $("championTitle").textContent = "🏆 미소녀즈 리그 우승";
-      $("championTeamName").textContent = team.name + " 챔피언";
+      $("championTitle").textContent = "🏆 미소녀즈 우승";
+      $("championTeamName").textContent = "챔피언 " + team.name;
       $("championPlayers").innerHTML = "";
 
       [...team.attack, ...team.defense].forEach(player => {
@@ -921,10 +1028,13 @@
         timer: null,
         minute: 0,
         half: 1,
+        halftimeWaiting: false,
         a,
         b,
         scoreA: 0,
         scoreB: 0,
+        goalHistoryA: [],
+        goalHistoryB: [],
         attackingTeam: a,
         defendingTeam: b,
         attackerIndex: 0,
@@ -1026,7 +1136,7 @@
       renderPlayerRankings();
 
       $("comment").textContent = "킥오프! 첫 번째 공격이 시작됩니다.";
-      addLog(`<b>킥오프!</b> <span class="notice">${teams[game.a].name}이 전반 공격을 시작합니다.</span>`, "notice");
+      addLog(`<b>킥오프!</b> <span class="notice">${topic(teams[game.a].name)} 전반 공격을 시작합니다.</span>`, "notice");
     }
 
     function changePossession(reason) {
@@ -1041,7 +1151,7 @@
       game.keeperDrawCount = 0;
 
       addLog(
-        `<b>${game.minute}분</b> <span class="notice">공수 전환! 이제 ${teams[game.attackingTeam].name}이 공격합니다. (${reason})</span>`,
+        `<b>${game.minute}분</b> <span class="notice">공수 전환! 이제 ${topic(teams[game.attackingTeam].name)} 공격합니다. (${reason})</span>`,
         "notice"
       );
     }
@@ -1118,7 +1228,7 @@
           const winner = getLeagueWinner();
 
           $("comment").textContent = `🏆 리그 종료! 최종 우승팀은 ${teams[winner].name}입니다!`;
-          addLog(`<span class="notice">🏆 6경기 종료! ${teams[winner].name}이 리그 우승을 차지합니다!</span>`, "notice");
+          addLog(`<span class="notice">🏆 6경기 종료! ${subject(teams[winner].name)} 리그 우승을 차지합니다!</span>`, "notice");
 
           showChampionTeam(winner);
         } else {
@@ -1133,8 +1243,55 @@
       renderPlayerRankings();
     }
 
+    function startSecondHalf() {
+      game.halftimeWaiting = false;
+      game.half = 2;
+      game.attackingTeam = game.b;
+      game.defendingTeam = game.a;
+      game.attackerIndex = 0;
+      game.defenderIndex = 0;
+      game.fieldBlockCount = 0;
+      game.keeperDrawCount = 0;
+
+      $("startBtn").disabled = true;
+      $("nextBtn").disabled = false;
+      $("autoBtn").disabled = false;
+
+      $("comment").textContent = `후반전 시작! ${topic(teams[game.b].name)} 공격을 시작합니다.`;
+      addLog(
+        `<b>후반 시작</b> <span class="notice">${teams[game.b].name}의 공격으로 후반전이 시작됩니다!</span>`,
+        "notice"
+      );
+
+      updateScoreboard();
+    }
+
+    function finishFirstHalf() {
+      stopAuto();
+
+      game.halftimeWaiting = true;
+
+      $("nextBtn").disabled = false;
+      $("autoBtn").disabled = true;
+
+      $("comment").textContent =
+        `전반 종료! ${teams[game.a].name} ${game.scoreA} : ${game.scoreB} ${teams[game.b].name} · 1분 진행 버튼을 누르면 후반전이 시작됩니다.`;
+
+      addLog(
+        `<b>45분</b> <span class="notice">전반 종료! 자동 진행이 멈췄습니다. 1분 진행 버튼으로 후반전을 시작하세요.</span>`,
+        "notice"
+      );
+
+      updateScoreboard();
+    }
+
     function playOneMinute() {
       if (!game.started || game.ended) return;
+
+      if (game.halftimeWaiting) {
+        startSecondHalf();
+        return;
+      }
 
       game.minute++;
       hideHighlight();
@@ -1144,54 +1301,68 @@
       const attacker = attackTeam.attack[game.attackerIndex];
       const defender = defenseTeam.defense[game.defenderIndex];
 
+      const attackerName = playerText(attacker);
+      const defenderName = playerText(defender);
+
       const result = randomPick(["attack", "draw", "defense"]);
 
       const prefix =
         `<b>${game.minute}분</b> ` +
-        `${attackTeam.name} ${attacker[1]} vs ${defenseTeam.name} ${defender[1]}<br>`;
+        `${attackTeam.name} ${attackerName} vs ${defenseTeam.name} ${defenderName}<br>`;
 
       if (defender[0] !== "킾") {
         if (result === "attack") {
           addPlayerStat(game.attackingTeam, attacker, "dribbles");
 
           const text = randomPick([
-            `${playerText(attacker)}이 ${playerText(defender)}을 제치고 돌파합니다!`,
-            `${playerText(attacker)}의 개인기! ${playerText(defender)}을 통과합니다!`,
-            `${playerText(attacker)}이 공간을 파고듭니다. 수비가 흔들립니다!`,
-            `${playerText(attacker)}이 수비 라인을 무너뜨립니다. 다음 수비수가 나섭니다!`,
-            `${playerText(defender)}의 압박을 벗어난 ${playerText(attacker)}! 공격이 계속됩니다.`
+            `${subject(attackerName)} ${object(defenderName)} 완벽하게 제치고 전진합니다!`,
+            `${attackerName}의 발끝이 번뜩입니다! ${subject(defenderName)} 타이밍을 놓칩니다.`,
+            `${subject(attackerName)} 좁은 공간을 비집고 빠져나갑니다. 수비 라인이 흔들립니다!`,
+            `${attackerName}의 과감한 돌파! ${subject(defenderName)} 따라붙지만 이미 늦었습니다.`,
+            `${subject(attackerName)} 방향을 바꾸며 ${object(defenderName)} 벗겨냅니다!`,
+            `${attackerName}의 스피드가 살아납니다. ${subject(defenderName)} 뒤로 물러섭니다!`,
+            `${subject(attackerName)} 공을 발에 붙인 채 질주합니다. 다음 수비가 기다립니다!`,
+            `${attackerName}의 드리블 돌파 성공! 공격의 온도가 올라갑니다.`,
+            `${subject(defenderName)} 몸을 던졌지만 ${attackerName}의 움직임을 막지 못합니다.`,
+            `${subject(attackerName)} 침착하게 볼을 지켜내며 한 명을 넘겨버립니다.`,
+            `${attackerName}의 페인팅 동작! ${subject(defenderName)} 중심을 잃습니다.`,
+            `${subject(attackerName)} 수비 사이로 파고듭니다. 골문까지 길이 열립니다!`
           ]);
 
           $("comment").textContent = text;
           addLog(prefix + `<span class="goal">${text}</span>`, "goal");
 
           game.defenderIndex++;
-
-          // 수비수를 돌파해도 막힌 누적 횟수는 초기화하지 않음
-          // 공1, 공2가 총 4번 막힐 때까지 누적 유지
           game.keeperDrawCount = 0;
-        }
-
-        else if (result === "defense") {
+        } else if (result === "defense") {
           addPlayerStat(game.defendingTeam, defender, "tackles");
 
           const blockText = randomPick([
-            `${playerText(defender)}의 압박! ${playerText(attacker)}은 동료에게 패스를 보냅니다.`,
-            `${playerText(defender)}이 길목을 차단합니다. 다음 공격수가 공을 이어받습니다.`,
-            `${playerText(attacker)}의 돌파가 ${playerText(defender)}에게 막힙니다! 공격권은 유지됩니다.`,
-            `${playerText(defender)}의 태클 성공! 공격팀은 다시 패스로 풀어갑니다.`,
-            `${playerText(defender)}이 공을 끊어냈지만 공격팀이 세컨드 볼을 잡습니다.`
+            `${subject(defenderName)} 정확한 태클로 ${object(attackerName)} 멈춰 세웁니다!`,
+            `${defenderName}의 압박이 날카롭습니다. ${subject(attackerName)} 동료에게 공을 내줍니다.`,
+            `${subject(defenderName)} 길목을 선점합니다! ${attackerName}의 돌파가 끊깁니다.`,
+            `${attackerName}의 시도가 ${defenderName}의 발끝에 걸립니다. 공격은 이어집니다.`,
+            `${subject(defenderName)} 몸을 던져 공을 차단합니다!`,
+            `${defenderName}의 수비 판단이 좋았습니다. ${subject(attackerName)} 패스를 선택합니다.`,
+            `${subject(defenderName)} 끝까지 따라붙어 ${object(attackerName)} 압박합니다.`,
+            `${attackerName}의 돌파가 막힙니다! ${subject(defenderName)} 수비 성공을 기록합니다.`,
+            `${subject(defenderName)} 공을 건드려 흐름을 끊어냅니다.`,
+            `${defenderName}의 집중력이 빛납니다. ${subject(attackerName)} 다시 공격을 조립합니다.`,
+            `${subject(attackerName)} 수비 벽에 막힙니다. 하지만 공격팀이 세컨드 볼을 잡습니다.`,
+            `${subject(defenderName)} 한 발 먼저 움직였습니다! 공격팀은 패스로 다시 시작합니다.`
           ]);
 
           addLog(prefix + `<span class="save">${blockText}</span>`, "save");
 
-          // 막힌 횟수 누적
           game.fieldBlockCount++;
 
-          // 총 4번 막히면 공수교대
           if (game.fieldBlockCount >= 4) {
-            const endText =
-              `${playerText(attacker)}이 이번 차단에 걸립니다. 공격권이 넘어갑니다!`;
+            const endText = randomPick([
+              `${attackerName}의 공격이 네 번째 차단에 걸립니다! ${topic(defenseTeam.name)} 끝내 공을 가져옵니다.`,
+              `연속된 수비 성공! ${subject(defenseTeam.name)} 공격권을 되찾습니다.`,
+              `${defenderName}의 마지막 차단! 이번 공격은 여기서 마무리됩니다.`,
+              `공격팀의 네 번째 시도가 막힙니다. ${topic(defenseTeam.name)} 역습으로 전환합니다!`
+            ]);
 
             $("comment").textContent = endText;
 
@@ -1202,13 +1373,21 @@
 
             changePossession("공격수 누적 4회 차단");
           } else {
-            // 공1 -> 공2 / 공2 -> 공1
             game.attackerIndex = game.attackerIndex === 0 ? 1 : 0;
 
             const nextAttacker = attackTeam.attack[game.attackerIndex];
+            const nextName = playerText(nextAttacker);
 
-            const passText =
-              `${playerText(attacker)}이 막히자 ${playerText(nextAttacker)}에게 패스가 연결됩니다.`;
+            const passText = randomPick([
+              `${subject(attackerName)} 막히자 ${direction(nextName)} 짧은 패스를 연결합니다.`,
+              `${attackerName}의 공이 ${direction(nextName)} 넘어갑니다. 공격은 계속됩니다.`,
+              `${subject(attackerName)} 무리하지 않습니다. ${nextName}에게 공을 맡깁니다.`,
+              `${attackerName}의 패스 선택! ${subject(nextName)} 다음 장면을 준비합니다.`,
+              `${subject(attackerName)} 수비를 등지고 ${direction(nextName)} 공을 내줍니다.`,
+              `${nextName}에게 볼이 전달됩니다. 공격팀이 다시 기회를 만듭니다.`,
+              `${attackerName}의 전진이 막히자 ${subject(nextName)} 공을 이어받습니다.`,
+              `${subject(attackerName)} 침착하게 패스합니다. ${nextName}의 차례입니다.`
+            ]);
 
             $("comment").textContent = passText;
 
@@ -1219,14 +1398,18 @@
           }
 
           game.keeperDrawCount = 0;
-        }
-
-        else {
+        } else {
           const text = randomPick([
-            `${playerText(attacker)}과 ${playerText(defender)}의 팽팽한 경합! 승부는 계속됩니다.`,
-            `서로 물러서지 않습니다. 같은 조합으로 다시 맞붙습니다!`,
-            `공방전이 이어집니다! 아직 누구도 우위를 잡지 못했습니다.`,
-            `${playerText(attacker)}과 ${playerText(defender)}, 공을 놓고 끝없는 신경전입니다.`
+            `${withParticle(attackerName)} ${defenderName}, 서로 한 치도 물러서지 않습니다!`,
+            `${subject(attackerName)} 공을 지키고 ${subject(defenderName)} 길을 막습니다. 팽팽합니다!`,
+            `몸싸움이 이어집니다! ${attackerName}도 ${defenderName}도 쉽게 물러서지 않습니다.`,
+            `${attackerName}의 움직임과 ${defenderName}의 수비가 정면으로 부딪힙니다.`,
+            `${subject(defenderName)} 압박하고 ${subject(attackerName)} 버텨냅니다. 승부는 계속됩니다!`,
+            `볼은 아직 ${attackerName}의 발밑에 있습니다. ${defenderName}의 견제도 만만치 않습니다.`,
+            `${attackerName}과 ${defenderName}의 신경전! 다음 순간이 중요합니다.`,
+            `${subject(attackerName)} 돌파 타이밍을 재고, ${subject(defenderName)} 빈틈을 지우고 있습니다.`,
+            `공방전이 길어집니다. 두 선수 모두 집중력을 놓지 않습니다.`,
+            `${attackerName}의 첫 시도는 막혔지만 공은 살아 있습니다!`
           ]);
 
           $("comment").textContent = text;
@@ -1234,21 +1417,37 @@
 
           game.keeperDrawCount = 0;
         }
-      }
-
-      else {
+      } else {
         if (result === "attack") {
           addPlayerStat(game.attackingTeam, attacker, "goals");
 
-          if (game.attackingTeam === game.a) game.scoreA++;
-          else game.scoreB++;
+          if (game.attackingTeam === game.a) {
+            game.scoreA++;
+            game.goalHistoryA.push({
+              minute: game.minute,
+              player: attackerName
+            });
+          } else {
+            game.scoreB++;
+            game.goalHistoryB.push({
+              minute: game.minute,
+              player: attackerName
+            });
+          }
 
           const text = randomPick([
-            `골!!! ${playerText(attacker)}이 골키퍼를 뚫어냅니다!`,
-            `골망이 흔들립니다! ${playerText(attacker)}의 결정력!`,
-            `들어갑니다! ${playerText(attacker)}의 완벽한 마무리!`,
-            `${playerText(attacker)}의 슈팅이 골문 구석에 꽂힙니다!`,
-            `골키퍼도 손쓸 수 없습니다! ${playerText(attacker)}의 득점입니다!`
+            `골!!! ${attackerName}의 슈팅이 골망을 흔듭니다!`,
+            `들어갑니다! ${attackerName}의 침착한 마무리입니다!`,
+            `${attackerName}의 강력한 한 방! 골키퍼도 손쓸 수 없습니다!`,
+            `골문 구석으로 꽂힙니다! ${subject(attackerName)} 득점합니다!`,
+            `${attackerName}의 슈팅! ${defenderName}의 손끝을 지나 골라인을 넘습니다!`,
+            `완벽한 마무리! ${subject(attackerName)} 팀에 귀중한 골을 안깁니다!`,
+            `골!!! ${attackerName}의 결정력이 경기장을 뒤흔듭니다!`,
+            `${subject(attackerName)} 침착하게 골키퍼를 속이고 마무리합니다!`,
+            `강한 슈팅이 그대로 골문 안으로! ${attackerName}의 득점입니다!`,
+            `수비진을 모두 뚫어낸 끝에 골! ${subject(attackerName)} 환호합니다!`,
+            `골망이 출렁입니다! ${attackerName}의 날카로운 마무리!`,
+            `${attackerName}의 슈팅이 빈틈을 찾아냅니다. 득점 성공입니다!`
           ]);
 
           $("comment").textContent = text;
@@ -1256,17 +1455,22 @@
           showHighlight(attacker, "⚽ GOAL!", text);
 
           changePossession("득점 후 킥오프");
-        }
-
-        else if (result === "defense") {
+        } else if (result === "defense") {
           addPlayerStat(game.defendingTeam, defender, "saves");
 
           const text = randomPick([
-            `${playerText(defender)}의 슈퍼 세이브! 공격을 막아냅니다!`,
-            `골키퍼 ${playerText(defender)}이 공을 쳐냅니다!`,
-            `${playerText(defender)}의 환상적인 선방입니다!`,
-            `일대일 찬스! 하지만 ${playerText(defender)}이 끝까지 버텨냅니다.`,
-            `${playerText(defender)}이 공을 품에 안습니다. 공격은 여기까지입니다.`
+            `${defenderName}의 슈퍼 세이브! 결정적인 슈팅을 막아냅니다!`,
+            `${subject(defenderName)} 몸을 날려 공을 쳐냅니다!`,
+            `일대일 찬스! 하지만 ${subject(defenderName)} 끝까지 버텨냅니다.`,
+            `${attackerName}의 슈팅을 ${subject(defenderName)} 정확히 잡아냅니다!`,
+            `골키퍼 ${defenderName}, 놀라운 반사 신경입니다!`,
+            `${defenderName}의 손끝이 공을 골문 밖으로 밀어냅니다!`,
+            `${subject(defenderName)} 각도를 완벽하게 좁혔습니다. 선방입니다!`,
+            `막혔습니다! ${defenderName}의 침착한 판단이 빛납니다.`,
+            `${attackerName}의 강슛! 하지만 ${defenderName}의 벽을 넘지 못합니다.`,
+            `${subject(defenderName)} 골문 앞을 지배합니다. 공격은 무산됩니다.`,
+            `환상적인 선방! ${defenderName}의 존재감이 커집니다.`,
+            `${defenderName}의 손이 먼저 닿았습니다. 위기를 넘깁니다!`
           ]);
 
           $("comment").textContent = text;
@@ -1274,33 +1478,40 @@
           showHighlight(defender, "🧤 SUPER SAVE!", text);
 
           changePossession("골키퍼 선방");
-        }
-
-        else {
+        } else {
           game.keeperDrawCount++;
 
           if (game.keeperDrawCount === 1) {
             game.attackerIndex = game.attackerIndex === 0 ? 1 : 0;
 
             const nextAttacker = attackTeam.attack[game.attackerIndex];
+            const nextName = playerText(nextAttacker);
 
             const text = randomPick([
-              `골문 앞 혼전! ${playerText(defender)}이 완전히 처리하지 못했고 ${playerText(nextAttacker)}에게 세컨드 찬스입니다!`,
-              `공이 골문 앞에 흐릅니다! ${playerText(nextAttacker)}이 다시 마무리를 노립니다.`,
-              `${playerText(defender)}의 손끝에 걸렸지만 끝난 게 아닙니다. ${playerText(nextAttacker)}이 재도전합니다!`
+              `골문 앞 혼전! ${defenderName}이 완전히 처리하지 못했고 ${nextName}에게 세컨드 찬스가 옵니다!`,
+              `공이 골문 앞에 흐릅니다! ${subject(nextName)} 재빨리 달려듭니다.`,
+              `${defenderName}의 손끝에 걸렸지만 끝난 게 아닙니다. ${subject(nextName)} 다시 노립니다!`,
+              `${attackerName}의 슈팅이 굴절됩니다! ${nextName}에게 마지막 기회가 이어집니다.`,
+              `골문 앞이 어수선합니다. ${subject(nextName)} 흘러나온 공을 잡습니다!`,
+              `${defenderName}이 공을 놓칩니다! ${nextName}의 재차 슈팅 기회입니다.`,
+              `세컨드 볼은 공격팀의 몫! ${subject(nextName)} 마무리를 준비합니다.`,
+              `${attackerName}의 시도 뒤 공이 살아 있습니다. ${nextName}의 발끝으로 향합니다!`
             ]);
 
             $("comment").textContent = text;
             addLog(prefix + `<span class="draw">${text}</span>`, "draw");
-          }
-
-          else {
+          } else {
             addPlayerStat(game.defendingTeam, defender, "saves");
 
             const text = randomPick([
-              `연속 슈팅도 막힙니다! ${playerText(defender)}이 끝내 공을 확보합니다.`,
-              `두 번째 혼전 끝에 ${playerText(defender)}이 공을 잡아냅니다! 선방 처리입니다.`,
-              `${playerText(defender)}이 끝까지 집중력을 잃지 않습니다. 공격은 마무리됩니다.`
+              `연속 슈팅도 막힙니다! ${subject(defenderName)} 끝내 공을 확보합니다.`,
+              `두 번째 혼전 끝에 ${subject(defenderName)} 공을 잡아냅니다! 선방 처리입니다.`,
+              `${defenderName}이 끝까지 집중력을 잃지 않습니다. 공격은 마무리됩니다.`,
+              `골문 앞 대혼전! 그러나 마지막 승자는 ${defenderName}입니다.`,
+              `${subject(defenderName)} 몸을 던져 공을 품에 안습니다. 위기를 지워냅니다!`,
+              `재차 슈팅까지 막아냅니다! ${defenderName}의 연속 선방입니다.`,
+              `${defenderName}의 침착함이 빛납니다. 골문 앞 위기를 정리합니다.`,
+              `마지막 순간 ${defenderName}이 공을 걷어냅니다! 공격권이 넘어갑니다.`
             ]);
 
             $("comment").textContent = text;
@@ -1312,31 +1523,20 @@
         }
       }
 
-      if (game.minute === 45) {
-        game.half = 2;
-        game.attackingTeam = game.b;
-        game.defendingTeam = game.a;
-        game.attackerIndex = 0;
-        game.defenderIndex = 0;
-        game.fieldBlockCount = 0;
-        game.keeperDrawCount = 0;
-
-        addLog(
-          `<b>45분</b> <span class="notice">전반 종료! 후반전은 ${teams[game.b].name}의 공격으로 시작합니다.</span>`,
-          "notice"
-        );
-
-        $("comment").textContent = `전반 종료! 후반전은 ${teams[game.b].name}의 공격으로 시작됩니다.`;
+      if (game.minute === 45 && game.half === 1) {
+        finishFirstHalf();
       }
 
-      if (game.minute >= 90) finishMatch();
+      if (game.minute >= 90) {
+        finishMatch();
+      }
 
       updateScoreboard();
       renderPlayerRankings();
     }
 
     function toggleAutoPlay() {
-      if (!game.started || game.ended) return;
+      if (!game.started || game.ended || game.halftimeWaiting) return;
 
       if (game.autoRunning) {
         stopAuto();
@@ -1348,7 +1548,7 @@
       $("autoBtn").textContent = "⏸ 자동 진행 멈춤";
 
       game.timer = setInterval(() => {
-        if (game.ended) {
+        if (game.ended || game.halftimeWaiting) {
           stopAuto();
           return;
         }
